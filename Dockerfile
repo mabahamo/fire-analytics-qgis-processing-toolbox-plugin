@@ -32,6 +32,11 @@ RUN apt-get update \
 RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && unzip awscliv2.zip && ./aws/install && rm -rf ./aws awscliv2.zip
 
 RUN npm install --global yarn
+RUN useradd -m qgis
+
+COPY fireanalyticstoolbox/requirements.txt /home/qgis/requirements.txt
+RUN pip3 install --break-system-packages -r /home/qgis/requirements.txt
+RUN pip3 install --break-system-packages importlib-metadata
 
 RUN git clone -b tif-test https://github.com/fire2a/C2F-W /usr/local/Cell2Fire
 WORKDIR /usr/local/Cell2Fire/Cell2Fire
@@ -42,7 +47,6 @@ COPY aws /usr/local/Cell2FireWrapper
 WORKDIR /usr/local/Cell2FireWrapper
 RUN yarn && yarn build
 
-RUN useradd -m qgis
 
 ENV QGIS_PREFIX_PATH /usr
 ENV QGIS_SERVER_LOG_STDERR 1
@@ -52,9 +56,8 @@ WORKDIR /home/qgis
 
 ENV QT_QPA_PLATFORM offscreen
 RUN mkdir -p /home/qgis/.local/share/QGIS/QGIS3/profiles/default/python/plugins/
-COPY fireanalyticstoolbox/requirements.txt /home/qgis/requirements.txt
-RUN pip3 install --break-system-packages -r /home/qgis/requirements.txt
-RUN pip3 install --break-system-packages importlib-metadata
+
+
 RUN git clone https://github.com/fire2a/fire2a-lib /home/qgis/fire2a
 COPY fireanalyticstoolbox /home/qgis/.local/share/QGIS/QGIS3/profiles/default/python/plugins/fire2a
 RUN mkdir /home/qgis/.local/share/QGIS/QGIS3/profiles/default/python/plugins/fire2a/fire2a
@@ -68,5 +71,8 @@ USER qgis
 RUN cd /home/qgis/.local/share/QGIS/QGIS3/profiles/default/python/plugins/fire2a/ && grep -Rl --include=*py "from fire2a" | tee will.change | xargs -I {} sed -i "s/^from fire2a/from .fire2a/" {}
 RUN qgis_process plugins enable fire2a
 
-# FROM base as qgis
-ENTRYPOINT ["node", "/usr/local/Cell2FireWrapper/build/wrapper"]
+FROM base as qgis
+ENTRYPOINT ["node", "/usr/local/Cell2FireWrapper/build/main"]
+
+FROM base as test
+CMD ["node", "/usr/local/Cell2FireWrapper/build/test"]
