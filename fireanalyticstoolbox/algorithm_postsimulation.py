@@ -1272,31 +1272,31 @@ class ScarSIMPP(QgsProcessingAlgorithm):
                     feature.SetField("perimeter", int(geom.Boundary().Length()))
                     otrolyr.CreateFeature(feature)
 
-            feedback.pushDebugInfo("fixing geometries...")
+            feedback.pushDebugInfo("not fixing geometries...")
 
-            if scar_fixed_geom := processing.run(
-                "native:fixgeometries",
-                {
-                    "INPUT": output_vector_file,  # "memory:ds" otrolyr "memory:tmp"
-                    "METHOD": 1,
-                    "OUTPUT": output_vector_file,  # QgsProcessing.TEMPORARY_OUTPUT
-                },
-                context=context,
-                feedback=feedback,
-                is_child_algorithm=True,
-            ):
-                if scar_fixed_geom := scar_fixed_geom.get("OUTPUT"):
-                    layer_details = context.LayerDetails(
-                        "Propagation Scars",
-                        context.project(),
-                        "Propagation Scars",
-                        QgsProcessingUtils.LayerHint.Vector,
-                    )
-                    layer_details.forceName = True
-                    layer_details.groupName = NAME["layer_group"]
-                    layer_details.layerSortKey = 2
-                    context.addLayerToLoadOnCompletion(scar_fixed_geom, layer_details)
-                    output_dict[self.OUT_POLY] = scar_fixed_geom
+            # if scar_fixed_geom := processing.run(
+            #     "native:fixgeometries",
+            #     {
+            #         "INPUT": output_vector_file,  # "memory:ds" otrolyr "memory:tmp"
+            #         "METHOD": 1,
+            #         "OUTPUT": output_vector_file,  # QgsProcessing.TEMPORARY_OUTPUT
+            #     },
+            #     context=context,
+            #     feedback=feedback,
+            #     is_child_algorithm=True,
+            # ):
+            #     if scar_fixed_geom := scar_fixed_geom.get("OUTPUT"):
+            #         layer_details = context.LayerDetails(
+            #             "Propagation Scars",
+            #             context.project(),
+            #             "Propagation Scars",
+            #             QgsProcessingUtils.LayerHint.Vector,
+            #         )
+            #         layer_details.forceName = True
+            #         layer_details.groupName = NAME["layer_group"]
+            #         layer_details.layerSortKey = 2
+            #         context.addLayerToLoadOnCompletion(scar_fixed_geom, layer_details)
+            #         output_dict[self.OUT_POLY] = scar_fixed_geom
 
             otrolyr.SyncToDisk()
             otrolyr = None
