@@ -70,11 +70,14 @@ RUN cp /home/qgis/fire2a/src/fire2a/meteo.py /home/qgis/.local/share/QGIS/QGIS3/
 RUN cp /home/qgis/fire2a/src/fire2a/raster.py /home/qgis/.local/share/QGIS/QGIS3/profiles/default/python/plugins/fire2a/fire2a/
 RUN cp /home/qgis/fire2a/src/fire2a/utils.py /home/qgis/.local/share/QGIS/QGIS3/profiles/default/python/plugins/fire2a/fire2a/
 RUN cp /home/qgis/fire2a/src/fire2a/__init__.py /home/qgis/.local/share/QGIS/QGIS3/profiles/default/python/plugins/fire2a/fire2a/
+RUN mkdir -p /home/qgis/.local/share/QGIS/QGIS3/profiles/default/python/plugins/fire2a/simulator/C2F/Cell2Fire/
+RUN cp /usr/local/Cell2Fire/Cell2Fire/Cell2Fire /home/qgis/.local/share/QGIS/QGIS3/profiles/default/python/plugins/fire2a/simulator/C2F/Cell2Fire/Cell2Fire.Linux.x86_64
 RUN chown qgis:qgis /home/qgis -R
 USER qgis
 
 RUN cd /home/qgis/.local/share/QGIS/QGIS3/profiles/default/python/plugins/fire2a/ && grep -Rl --include=*py "from fire2a" | tee will.change | xargs -I {} sed -i "s/^from fire2a/from .fire2a/" {}
 RUN qgis_process plugins enable fire2a
+
 
 FROM base as qgis
 ENTRYPOINT ["node", "/usr/local/Cell2FireWrapper/build/main"]

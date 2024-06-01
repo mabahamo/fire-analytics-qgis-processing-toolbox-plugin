@@ -30,11 +30,11 @@ export async function simulator(params: ParamsType) {
   console.log({ ignitionLayerResult: ignitionLayerResult });
 
   const cell2FireArgs: any = {
-    "ElevationRaster": sourceFolder + "/elevation.asc",
+    "ElevationRaster": sourceFolder + "/elevation.tif",
     "EnableCrownFire": false,
     "FoliarMoistureContent": 66,
     "FuelModel": 1,
-    "FuelRaster": sourceFolder + "/fuels.asc",
+    "FuelRaster": sourceFolder + "/fuels.tif",
     "IgnitionMode": 0,
     // "IgnitionPointVectorLayer": ignitionLayer,
     // "IgnitionProbabilityMap": null,
@@ -45,7 +45,7 @@ export async function simulator(params: ParamsType) {
     "NumberOfSimulations": 2,
     "OtherCliArgs": "",
     "RandomNumberGeneratorSeed": 123,
-    "ResultsDirectory": "TEMPORARY_OUTPUT",
+    "ResultsDirectory": targetFolder,
     "ResultsInInstance": true,
     "SetFuelLayerStyle": false,
     "SimulationThreads": 7,
