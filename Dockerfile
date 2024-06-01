@@ -38,12 +38,17 @@ COPY fireanalyticstoolbox/requirements.txt /home/qgis/requirements.txt
 RUN pip3 install --break-system-packages -r /home/qgis/requirements.txt
 RUN pip3 install --break-system-packages importlib-metadata
 
+COPY aws/package.json /home/qgis
+COPY aws/yarn.lock /home/qgis
+RUN cd /home/qgis && yarn
+
 RUN git clone -b tif-test https://github.com/fire2a/C2F-W /usr/local/Cell2Fire
 WORKDIR /usr/local/Cell2Fire/Cell2Fire
 RUN make clean -f makefile.debian
 RUN make install -f makefile.debian
 
 COPY aws /usr/local/Cell2FireWrapper
+RUN mv /home/qgis/node_modules /usr/local/Cell2FireWrapper/node_modules
 WORKDIR /usr/local/Cell2FireWrapper
 RUN yarn && yarn build
 

@@ -27,52 +27,49 @@ export async function simulator(params: ParamsType) {
 
   const ignitionLayerCmd = `python3 /usr/local/Cell2FireWrapper/layer.py --latitude ${params.ignitionPoint.latitude} --longitude ${params.ignitionPoint.longitude} --output ${ignitionLayer}`
   const ignitionLayerResult = await exec(ignitionLayerCmd);
-  console.log({ignitionLayerResult: ignitionLayerResult});
+  console.log({ ignitionLayerResult: ignitionLayerResult });
 
+  const cell2FireArgs: any = {
+    "ElevationRaster": sourceFolder + "/elevation.asc",
+    "EnableCrownFire": false,
+    "FoliarMoistureContent": 66,
+    "FuelModel": 1,
+    "FuelRaster": sourceFolder + "/fuels.asc",
+    "IgnitionMode": 0,
+    // "IgnitionPointVectorLayer": ignitionLayer,
+    // "IgnitionProbabilityMap": null,
+    // "IgnitionRadius": 0,
+    "InstanceDirectory": "TEMPORARY_OUTPUT",
+    "InstanceInProject": false,
+    "LiveAndDeadFuelMoistureContentScenario": 2,
+    "NumberOfSimulations": 2,
+    "OtherCliArgs": "",
+    "RandomNumberGeneratorSeed": 123,
+    "ResultsDirectory": "TEMPORARY_OUTPUT",
+    "ResultsInInstance": true,
+    "SetFuelLayerStyle": false,
+    "SimulationThreads": 7,
+    "WeatherDirectory": null,
+    "WeatherFile": sourceFolder + "/Weather.csv",
+    "WeatherMode": 0
+  }
 
-  const cell2FireArgs: any = { 
-    "input-instance-folder": sourceFolder,
-    "output-folder": targetFolder,
-    "sim": "K",
-    "nsims": 2,
-    "seed": 123,
-    "nthreads": 7,
-    "fmc": 66,
-    "scenario": 2,
-    "weather": "rows",
-    
-   };
-
-  console.log({cell2FireArgs});
+  console.log({ cell2FireArgs });
 
   const parameters: string[] = [];
 
   for (const key of Object.keys(cell2FireArgs)) {
-    parameters.push(`--${key} ${cell2FireArgs[key]}`);
+    parameters.push(`--${key}=${cell2FireArgs[key]}`);
   }
 
 
   console.log(`starting download ${source}`);
   await exec(`aws s3 cp ${source} ${sourceFolder} --recursive`);
-  console.log(`downloaded ${source}`);
+  console.log(`downloaded ${source} to ${sourceFolder}`);
 
-  /** 
-   * ./Cell2Fire.Darwin.x86_64 
-   * --final-grid 
-   * --grids 
-   * --sim K 
-   * --nsims 2 
-   * --seed 123 
-   * --nthreads 7 
-   * --fmc 66 
-   * --scenario 2 
-   * --weather rows 
-   * --input-instance-folder /private/var/folders/0h/lvjhgtts0x32217c7ngfxfn00000gn/T/processing_CngDaM/04acfd74040d4cf2b0b572eb457cf80b/InstanceDirectory 
-   * --output-folder /private/var/folders/0h/lvjhgtts0x32217c7ngfxfn00000gn/T/processing_CngDaM/04acfd74040d4cf2b0b572eb457cf80b/InstanceDirectory/results 
-  */
-
-  const cmd = `Cell2Fire --final-grid --grids --out-crown ${parameters.join(" ")}`;
+  const cmd = `qgis_process run fire2a:cell2firesimulator ${parameters.join(" ")}`
   console.log({ cmd });
+
 
   const output = await exec(cmd);
   console.log({ output });
@@ -101,7 +98,7 @@ export async function simulator(params: ParamsType) {
    */
 
   let baseLayer = `${sourceFolder}/fuels.tif`;
-  if (!existsSync(baseLayer)){
+  if (!existsSync(baseLayer)) {
     baseLayer = `${sourceFolder}/fuels.asc`;
     if (!existsSync(baseLayer)) {
       throw new Error(`"Base layer not found in ${sourceFolder}/fuels.{asc|tif}`);
@@ -111,18 +108,18 @@ export async function simulator(params: ParamsType) {
   const scarPolygon = `${targetFolder}/scars.gpkg`;
   const scarRaster = `${targetFolder}/scarRaster.tif`;
   const fireScarCmd = `qgis_process run fire2a:scar --distance_units=meters --area_units=m2 --ellipsoid=EPSG:32718 --BaseLayer=${baseLayer} --BurnProbability=TEMPORARY_OUTPUT --SampleScarFile=${sampleScarFile} --ScarPolygon=${scarPolygon} --ScarRaster=${scarRaster}`
-  console.log({fireScarCmd});
+  console.log({ fireScarCmd });
 
   const fireScar = await exec(fireScarCmd);
   console.log(`out: ${fireScar.stdout}\n\nerr: ${fireScar.stderr}`);
 
   const fireScarRasterPngCmd = `python3 /usr/local/Cell2FireWrapper/tiff_to_png.py ${scarRaster} ${targetFolder}/raster.png`
   const fireScarRasterPng = await exec(fireScarRasterPngCmd);
-  console.log({fireScarRasterPng: fireScarRasterPng});
+  console.log({ fireScarRasterPng: fireScarRasterPng });
 
   const fireScarPngCmd = `python3 /usr/local/Cell2FireWrapper/gpkg_to_png.py ${scarPolygon} ${targetFolder}/polygon.png`
   const fireScarPng = await exec(fireScarPngCmd);
-  console.log({fireScarPng: fireScarPng});
+  console.log({ fireScarPng: fireScarPng });
 
 
   //TODO: These files should be compressed before uploading to S3
