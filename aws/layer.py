@@ -1,4 +1,5 @@
 import os
+import sys
 from qgis.core import (
     QgsApplication,
     QgsPointXY,
@@ -14,6 +15,11 @@ from qgis.core import (
 )
 from qgis.PyQt.QtCore import QVariant
 
+latitude = float(sys.argv[1]);
+longitude = float(sys.argv[2]);
+output_path = sys.argv[3];
+
+
 # Set up the QGIS application
 QgsApplication.setPrefixPath("/usr/bin/qgis", True)
 qgs = QgsApplication([], False)
@@ -26,7 +32,7 @@ crs = QgsCoordinateReferenceSystem("EPSG:32718")   # UTM zone 18S
 transform_context = QgsCoordinateTransformContext()
 transform = QgsCoordinateTransform(source_crs, crs, transform_context)
 
-point = QgsPointXY(-70.2, -33.7)  # Note: longitude first, then latitude
+point = QgsPointXY(longitude, latitude)  # Note: longitude first, then latitude
 projected_point = transform.transform(point)
 
 # Create a point feature
@@ -34,32 +40,23 @@ feature = QgsFeature()
 feature.setGeometry(QgsGeometry.fromPointXY(projected_point))
 
 # Create a new layer
-layer = QgsVectorLayer("Point?crs=EPSG:32718", "point_layer", "memory")
-if not layer.isValid():
-    print("Layer failed to load!")
-    qgs.exitQgis()
-    exit()
-
-# Add a field to the layer
-layer.startEditing()
-layer.dataProvider().addAttributes([QgsField("id", QVariant.Int)])
-layer.updateFields()
-
-# Set the feature's attribute
-feature.setAttributes([1])
+layer = QgsVectorLayer("Point?crs=EPSG:32718", "ignitionPoint", "memory")
 
 # Add the feature to the layer
-layer.addFeature(feature)
+layer.dataProvider().addFeature(feature)
+
+# Update the layer's extent
+layer.updateExtents()
 layer.commitChanges()
 
-# Add the layer to the current project
-QgsProject.instance().addMapLayer(layer)
-
-# Export the layer to a GeoPackage
-output_path = "/tmp/point_layer.gpkg"  # Update this path to your desired output location
-options = QgsVectorFileWriter.SaveVectorOptions()
-options.driverName = "GPKG"
-QgsVectorFileWriter.writeAsVectorFormatV2(layer, output_path, QgsCoordinateTransformContext(), options)
+# Export the layer
+QgsVectorFileWriter.writeAsVectorFormat(
+    layer,
+    output_path,
+    'UTF-8',
+    layer.crs(),
+    'ESRI Shapefile'
+)
 
 # Clean up
 qgs.exitQgis()

@@ -23,9 +23,9 @@ export async function simulator(params: ParamsType) {
   const source = params.inputInstanceFolder;
   const target = params.outputFolder;
 
-  const ignitionLayer = `${targetFolder}/ignitionPoint.gpkg`;
+  const ignitionLayer = `${sourceFolder}/ignitionPoint.shp`;
 
-  const ignitionLayerCmd = `python3 /usr/local/Cell2FireWrapper/layer.py --latitude ${params.ignitionPoint.latitude} --longitude ${params.ignitionPoint.longitude} --output ${ignitionLayer}`
+  const ignitionLayerCmd = `python3 /usr/local/Cell2FireWrapper/layer.py ${params.ignitionPoint.latitude} ${params.ignitionPoint.longitude} ${ignitionLayer}`
   const ignitionLayerResult = await exec(ignitionLayerCmd);
   console.log({ ignitionLayerResult: ignitionLayerResult });
 
@@ -35,10 +35,10 @@ export async function simulator(params: ParamsType) {
     "FoliarMoistureContent": 66,
     "FuelModel": 1,
     "FuelRaster": sourceFolder + "/fuels.tif",
-    "IgnitionMode": 0,
-    // "IgnitionPointVectorLayer": ignitionLayer,
-    // "IgnitionProbabilityMap": null,
-    // "IgnitionRadius": 0,
+    "IgnitionMode": 2,
+    "IgnitionPointVectorLayer": `"${ignitionLayer}|layername=ignitionPoint"`,
+    // "IgnitionProbabilityMap": "None",
+    "IgnitionRadius": 2,
     "InstanceDirectory": "TEMPORARY_OUTPUT",
     "InstanceInProject": false,
     "LiveAndDeadFuelMoistureContentScenario": 2,
@@ -61,11 +61,15 @@ export async function simulator(params: ParamsType) {
   for (const key of Object.keys(cell2FireArgs)) {
     parameters.push(`--${key}=${cell2FireArgs[key]}`);
   }
-
+  parameters.push("--OutputOptions=0");
+  parameters.push("--OutputOptions=1");
+  parameters.push("--OutputOptions=6");
 
   console.log(`starting download ${source}`);
   await exec(`aws s3 cp ${source} ${sourceFolder} --recursive`);
   console.log(`downloaded ${source} to ${sourceFolder}`);
+
+  console.log("ls: " + (await exec(`find ${sourceFolder}`)).stdout);
 
   const cmd = `qgis_process run fire2a:cell2firesimulator ${parameters.join(" ")}`
   console.log({ cmd });
@@ -73,6 +77,8 @@ export async function simulator(params: ParamsType) {
 
   const output = await exec(cmd);
   console.log({ output });
+
+  console.log("Ignitions: " + (await exec(`cat ${sourceFolder}/Ignitions.csv`)).stdout);
 
   const sampleScarFile = `${targetFolder}/Grids/Grids1/ForestGrid0.csv`;
   if (!existsSync(sampleScarFile)) {
