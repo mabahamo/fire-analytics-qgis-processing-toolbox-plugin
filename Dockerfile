@@ -78,9 +78,9 @@ USER qgis
 RUN cd /home/qgis/.local/share/QGIS/QGIS3/profiles/default/python/plugins/fire2a/ && grep -Rl --include=*py "from fire2a" | tee will.change | xargs -I {} sed -i "s/^from fire2a/from .fire2a/" {}
 RUN qgis_process plugins enable fire2a
 
+FROM base as test
+CMD ["node", "/usr/local/Cell2FireWrapper/build/test"]
 
 FROM base as qgis
 ENTRYPOINT ["node", "/usr/local/Cell2FireWrapper/build/main"]
 
-FROM base as test
-CMD ["node", "/usr/local/Cell2FireWrapper/build/test"]

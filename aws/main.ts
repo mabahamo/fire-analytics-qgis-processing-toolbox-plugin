@@ -6,7 +6,7 @@ const requiredParams = ["INPUT", "OUTPUT", "IGNITION_LAT", "IGNITION_LONG"];
 
 for(const p of requiredParams) {
     if (!process.env[p]) {
-        throw new Error("Missing ENV " + p);
+        throw new Error("Missing ENV variable: " + p);
     }
 }
 
